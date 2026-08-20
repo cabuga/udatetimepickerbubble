@@ -1,0 +1,265 @@
+ignoreGeneratedHeader = true
+severity = "warning"
+confidence = 0.8
+errorCode = 1
+warningCode = 1
+enableAllRules = true
+
+[directive.specify-disable-reason]
+severity = "error"
+
+[rule.blank-imports]
+[rule.bool-literal-in-expr]
+[rule.context-as-argument]
+[rule.context-keys-type]
+[rule.datarace]
+[rule.empty-block]
+[rule.error-return]
+[rule.error-strings]
+[rule.error-naming]
+[rule.if-return]
+[rule.increment-decrement]
+[rule.indent-error-flow]
+[rule.modifies-parameter]
+[rule.range]
+[rule.receiver-naming]
+[rule.redefines-builtin-id]
+[rule.superfluous-else]
+[rule.time-naming]
+[rule.unexported-return]
+[rule.unreachable-code]
+[rule.unused-parameter]
+[rule.useless-break]
+[rule.var-declaration]
+[rule.waitgroup-by-value]
+
+[rule.add-constant]
+disabled = true
+
+[rule.argument-limit]
+disabled = true
+
+[rule.atomic]
+disabled = true
+
+[rule.banned-characters]
+disabled = true
+
+[rule.bare-return]
+disabled = true
+
+[rule.call-to-gc]
+disabled = true
+
+[rule.cognitive-complexity]
+disabled = true
+
+[rule.comment-spacings]
+disabled = true
+
+[rule.comments-density]
+disabled = true
+
+[rule.confusing-naming]
+disabled = true
+
+[rule.confusing-results]
+disabled = true
+
+[rule.constant-logical-expr]
+disabled = true
+
+[rule.cyclomatic]
+disabled = true
+
+[rule.deep-exit]
+disabled = true
+
+[rule.defer]
+disabled = true
+
+[rule.dot-imports]
+disabled = true
+
+[rule.duplicated-imports]
+disabled = true
+
+[rule.early-return]
+disabled = true
+
+[rule.empty-lines]
+disabled = true
+
+[rule.enforce-map-style]
+disabled = true
+
+[rule.enforce-repeated-arg-type-style]
+disabled = true
+
+[rule.enforce-slice-style]
+disabled = true
+
+[rule.enforce-switch-style]
+disabled = true
+
+[rule.errorf]
+disabled = true
+
+[rule.exported]
+disabled = true
+
+[rule.file-header]
+disabled = true
+
+[rule.file-length-limit]
+disabled = true
+
+[rule.filename-format]
+disabled = true
+
+[rule.flag-parameter]
+disabled = true
+
+[rule.forbidden-call-in-wg-go]
+disabled = true
+
+[rule.function-length]
+disabled = false
+
+[rule.function-result-limit]
+disabled = true
+
+[rule.get-return]
+disabled = true
+
+[rule.identical-branches]
+disabled = true
+
+[rule.identical-ifelseif-branches]
+disabled = true
+
+[rule.identical-ifelseif-conditions]
+disabled = true
+
+[rule.identical-switch-branches]
+disabled = true
+
+[rule.identical-switch-conditions]
+disabled = true
+
+[rule.import-alias-naming]
+disabled = true
+
+[rule.import-shadowing]
+disabled = true
+
+[rule.imports-blocklist]
+disabled = true
+
+[rule.inefficient-map-lookup]
+disabled = true
+
+[rule.line-length-limit]
+disabled = false
+
+[rule.max-control-nesting]
+disabled = false
+
+[rule.max-public-structs]
+disabled = false
+
+[rule.modifies-value-receiver]
+disabled = true
+
+[rule.nested-structs]
+disabled = true
+
+[rule.optimize-operands-order]
+disabled = true
+
+[rule.package-comments]
+disabled = true
+
+[rule.package-directory-mismatch]
+disabled = true
+
+[rule.package-naming]
+disabled = true
+
+[rule.range-val-address]
+disabled = true
+
+[rule.range-val-in-closure]
+disabled = true
+
+[rule.redundant-build-tag]
+disabled = true
+
+[rule.redundant-import-alias]
+disabled = true
+
+[rule.redundant-test-main-exit]
+disabled = true
+
+[rule.string-format]
+disabled = true
+
+[rule.string-of-int]
+disabled = true
+
+[rule.struct-tag]
+disabled = true
+
+[rule.time-date]
+disabled = true
+
+[rule.time-equal]
+disabled = true
+
+[rule.unchecked-type-assertion]
+disabled = true
+
+[rule.unconditional-recursion]
+disabled = true
+
+[rule.unexported-naming]
+disabled = true
+
+[rule.unhandled-error]
+disabled = true
+
+[rule.unnecessary-format]
+disabled = true
+
+[rule.unnecessary-if]
+disabled = true
+
+[rule.unnecessary-stmt]
+disabled = true
+
+[rule.unsecure-url-scheme]
+disabled = true
+
+[rule.unused-receiver]
+disabled = true
+
+[rule.use-any]
+disabled = true
+
+[rule.use-errors-new]
+disabled = true
+
+[rule.use-fmt-print]
+disabled = true
+
+[rule.use-slices-sort]
+disabled = true
+
+[rule.use-waitgroup-go]
+disabled = true
+
+[rule.useless-fallthrough]
+disabled = true
+
+[rule.var-naming]
+disabled = true
