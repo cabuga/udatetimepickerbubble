@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	tea "github.com/charmbracelet/bubbletea"
+	tea "charm.land/bubbletea/v2"
 )
 
 func TestFormatInitialExample(t *testing.T) {
@@ -229,15 +229,15 @@ func updateWithKey(t *testing.T, model Model, key string) Model {
 	var updated tea.Model
 	switch key {
 	case "left":
-		updated, _ = model.Update(tea.KeyMsg{Type: tea.KeyLeft})
+		updated, _ = model.Update(tea.KeyPressMsg(tea.Key{Code: tea.KeyLeft}))
 	case "right":
-		updated, _ = model.Update(tea.KeyMsg{Type: tea.KeyRight})
+		updated, _ = model.Update(tea.KeyPressMsg(tea.Key{Code: tea.KeyRight}))
 	case "up":
-		updated, _ = model.Update(tea.KeyMsg{Type: tea.KeyUp})
+		updated, _ = model.Update(tea.KeyPressMsg(tea.Key{Code: tea.KeyUp}))
 	case "down":
-		updated, _ = model.Update(tea.KeyMsg{Type: tea.KeyDown})
+		updated, _ = model.Update(tea.KeyPressMsg(tea.Key{Code: tea.KeyDown}))
 	default:
-		keyMsg := tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune(key)}
+		keyMsg := tea.KeyPressMsg(tea.Key{Code: []rune(key)[0], Text: key})
 		updated, _ = model.Update(keyMsg)
 	}
 
