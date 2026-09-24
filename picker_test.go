@@ -79,11 +79,159 @@ func TestDayDownMovesToPreviousMonth(t *testing.T) {
 	}
 }
 
+func TestFormatDateOmitsTime(t *testing.T) {
+	value := time.Date(2026, time.August, 20, 23, 21, 0, 0, time.UTC)
+
+	got := FormatDate(value)
+	want := "CW 34.4  2026/08/20"
+
+	if got != want {
+		t.Fatalf("FormatDate() = %q, want %q", got, want)
+	}
+}
+
+func TestDateModeSkipsTimeFields(t *testing.T) {
+	model := New(Config{
+		InitialTime:  time.Date(2026, time.August, 20, 23, 21, 0, 0, time.UTC),
+		InitialField: FieldDay,
+		DateOnly:     true,
+	})
+
+	updated := updateWithKey(t, model, "right")
+
+	if updated.SelectedField() != FieldCalendarWeek {
+		t.Fatalf(
+			"selected field = %v, want %v",
+			updated.SelectedField(),
+			FieldCalendarWeek,
+		)
+	}
+
+	got := Format(updated.CurrentTime())
+	want := "CW 34.4  2026/08/20 00:00"
+	if got != want {
+		t.Fatalf("date mode current time = %q, want %q", got, want)
+	}
+}
+
+func TestNextScheduleUsesDailySchedule(t *testing.T) {
+	model := New(Config{
+		InitialTime: time.Date(2026, time.August, 20, 20, 30, 0, 0, time.UTC),
+		Schedules:   []Schedule{NewDailySchedule(21, 0)},
+	})
+
+	updated := updateWithKey(t, model, "n")
+
+	got := Format(updated.CurrentTime())
+	want := "CW 34.4  2026/08/20 21:00"
+	if got != want {
+		t.Fatalf("next schedule = %q, want %q", got, want)
+	}
+}
+
+func TestNextScheduleUsesNearestSchedule(t *testing.T) {
+	model := New(Config{
+		InitialTime: time.Date(2026, time.August, 20, 20, 30, 0, 0, time.UTC),
+		Schedules: []Schedule{
+			NewDailySchedule(23, 0),
+			NewDailySchedule(21, 0),
+		},
+	})
+
+	updated := updateWithKey(t, model, "n")
+
+	got := Format(updated.CurrentTime())
+	want := "CW 34.4  2026/08/20 21:00"
+	if got != want {
+		t.Fatalf("nearest schedule = %q, want %q", got, want)
+	}
+}
+
+func TestNextScheduleCanUseCustomKey(t *testing.T) {
+	model := New(Config{
+		InitialTime: time.Date(
+			2026,
+			time.August,
+			20,
+			21,
+			0,
+			0,
+			0,
+			time.UTC,
+		),
+		Schedules: []Schedule{NewDailySchedule(21, 0)},
+		NextScheduleKeys: []string{
+			"x",
+		},
+	})
+
+	updated := updateWithKey(t, model, "x")
+
+	got := Format(updated.CurrentTime())
+	want := "CW 34.5  2026/08/21 21:00"
+	if got != want {
+		t.Fatalf("custom key next schedule = %q, want %q", got, want)
+	}
+}
+
+func TestCronScheduleNextMonday(t *testing.T) {
+	schedule, err := NewCronSchedule("5 4 * * 1")
+	if err != nil {
+		t.Fatalf("NewCronSchedule() error = %v", err)
+	}
+
+	model := New(Config{
+		InitialTime: time.Date(2026, time.August, 19, 10, 0, 0, 0, time.UTC),
+		Schedules: []Schedule{
+			schedule,
+		},
+	})
+
+	updated := updateWithKey(t, model, "n")
+
+	got := Format(updated.CurrentTime())
+	want := "CW 35.1  2026/08/24 04:05"
+	if got != want {
+		t.Fatalf("cron next monday = %q, want %q", got, want)
+	}
+}
+
+func TestNextScheduleUsesNearestCronSchedule(t *testing.T) {
+	monday, mondayErr := NewCronSchedule("5 4 * * 1")
+	if mondayErr != nil {
+		t.Fatalf("NewCronSchedule(monday) error = %v", mondayErr)
+	}
+	thursday, thursdayErr := NewCronSchedule("7 5 * * 4")
+	if thursdayErr != nil {
+		t.Fatalf("NewCronSchedule(thursday) error = %v", thursdayErr)
+	}
+
+	model := New(Config{
+		InitialTime: time.Date(2026, time.August, 19, 10, 0, 0, 0, time.UTC),
+		Schedules: []Schedule{
+			monday,
+			thursday,
+		},
+	})
+
+	updated := updateWithKey(t, model, "n")
+
+	got := Format(updated.CurrentTime())
+	want := "CW 34.4  2026/08/20 05:07"
+	if got != want {
+		t.Fatalf("nearest cron = %q, want %q", got, want)
+	}
+}
+
 func updateWithKey(t *testing.T, model Model, key string) Model {
 	t.Helper()
 
 	var updated tea.Model
 	switch key {
+	case "left":
+		updated, _ = model.Update(tea.KeyMsg{Type: tea.KeyLeft})
+	case "right":
+		updated, _ = model.Update(tea.KeyMsg{Type: tea.KeyRight})
 	case "up":
 		updated, _ = model.Update(tea.KeyMsg{Type: tea.KeyUp})
 	case "down":

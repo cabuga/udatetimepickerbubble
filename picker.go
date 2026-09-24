@@ -19,7 +19,7 @@ const (
 )
 
 const tutorialText = "Use left/right to select, up/down or digits to edit, " +
-	"t for now, enter to confirm, q/esc to cancel.\n\n"
+	"n for next schedule, t for now, enter to confirm, q/esc to cancel.\n\n"
 
 type Field int
 
@@ -43,11 +43,14 @@ const (
 )
 
 type Config struct {
-	InitialTime  time.Time
-	InitialField Field
-	ShowTutorial bool
-	Title        string
-	Now          func() time.Time
+	InitialTime      time.Time
+	InitialField     Field
+	DateOnly         bool
+	Schedules        []Schedule
+	NextScheduleKeys []string
+	ShowTutorial     bool
+	Title            string
+	Now              func() time.Time
 }
 
 type Result struct {
@@ -60,6 +63,9 @@ type Model struct {
 	current      time.Time
 	initialField Field
 	field        Field
+	dateOnly     bool
+	schedules    []Schedule
+	nextKeys     map[string]struct{}
 	tempInput    string
 	showTutorial bool
 	title        string
@@ -78,17 +84,20 @@ func New(config Config) Model {
 	if current.IsZero() {
 		current = now()
 	}
-	current = truncateToMinute(current)
 
 	field := config.InitialField
-	if field < FieldCalendarWeek || field > FieldMinute {
+	if field < FieldCalendarWeek || field > maxField(config.DateOnly) {
 		field = FieldCalendarWeek
 	}
+	current = normalizeTimeByMode(current, config.DateOnly)
 
 	return Model{
 		current:      current,
 		initialField: field,
 		field:        field,
+		dateOnly:     config.DateOnly,
+		schedules:    append([]Schedule(nil), config.Schedules...),
+		nextKeys:     nextScheduleKeySet(config.NextScheduleKeys),
 		showTutorial: config.ShowTutorial,
 		title:        config.Title,
 		now:          now,
@@ -106,13 +115,19 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 
 	key := keyMsg.String()
+	if _, ok := m.nextKeys[key]; ok {
+		m.applyTemp()
+		m.jumpToNextSchedule()
+		return m, nil
+	}
+
 	switch key {
 	case "left":
 		m.applyTemp()
-		m.field = previousField(m.field)
+		m.field = m.previousField()
 	case "right", "tab":
 		m.applyTemp()
-		m.field = nextField(m.field)
+		m.field = m.nextField()
 	case "up":
 		m.applyTemp()
 		m.adjust(1)
@@ -121,7 +136,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.adjust(-1)
 	case "t":
 		m.tempInput = ""
-		m.current = truncateToMinute(m.now())
+		m.current = normalizeTimeByMode(m.now(), m.dateOnly)
 	case "enter":
 		m.applyTemp()
 		m.done = true
@@ -140,7 +155,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.tempInput += key
 			if len(m.tempInput) >= fieldLength(m.field) {
 				m.applyTemp()
-				m.field = nextField(m.field)
+				m.field = m.nextField()
 			}
 		}
 	}
@@ -218,9 +233,23 @@ func (m Model) renderPicker() string {
 	}
 
 	for field := FieldCalendarWeek; field <= FieldMinute; field++ {
+		if field > maxField(m.dateOnly) {
+			continue
+		}
 		if field == m.field {
 			values[field] = "\x1b[7m" + values[field] + "\x1b[0m"
 		}
+	}
+
+	if m.dateOnly {
+		return fmt.Sprintf(
+			"CW %s.%s  %s/%s/%s",
+			values[FieldCalendarWeek],
+			values[FieldISOWeekday],
+			values[FieldYear],
+			values[FieldMonth],
+			values[FieldDay],
+		)
 	}
 
 	return fmt.Sprintf(
@@ -265,7 +294,7 @@ func (m *Model) adjust(delta int) {
 	case FieldMinute:
 		m.current = m.current.Add(time.Duration(delta) * time.Minute)
 	}
-	m.current = truncateToMinute(m.current)
+	m.current = normalizeTimeByMode(m.current, m.dateOnly)
 }
 
 func (m *Model) setField(value int) {
@@ -287,7 +316,7 @@ func (m *Model) setField(value int) {
 	case FieldMinute:
 		m.current = setClock(m.current, m.current.Hour(), clamp(value, 0, 59))
 	}
-	m.current = truncateToMinute(m.current)
+	m.current = normalizeTimeByMode(m.current, m.dateOnly)
 }
 
 func (m *Model) setISOWeekday(value int) {
@@ -306,9 +335,61 @@ func (m *Model) setISOWeekday(value int) {
 	)
 }
 
+func (m *Model) jumpToNextSchedule() {
+	next, ok := nextScheduledTime(m.current, m.schedules)
+	if !ok {
+		return
+	}
+
+	m.current = normalizeTimeByMode(next, m.dateOnly)
+}
+
+func nextScheduledTime(
+	after time.Time,
+	schedules []Schedule,
+) (time.Time, bool) {
+	var nearest time.Time
+	found := false
+	for _, schedule := range schedules {
+		if schedule == nil {
+			continue
+		}
+
+		candidate := schedule.Next(after)
+		if !candidate.After(after) {
+			continue
+		}
+		if !found || candidate.Before(nearest) {
+			nearest = candidate
+			found = true
+		}
+	}
+
+	return nearest, found
+}
+
 func Format(value time.Time) string {
+	return format(value, false)
+}
+
+func FormatDate(value time.Time) string {
+	return format(value, true)
+}
+
+func format(value time.Time, dateOnly bool) string {
 	value = truncateToMinute(value)
 	_, week := value.ISOWeek()
+	if dateOnly {
+		return fmt.Sprintf(
+			"CW %02d.%d  %04d/%02d/%02d",
+			week,
+			isoWeekday(value),
+			value.Year(),
+			int(value.Month()),
+			value.Day(),
+		)
+	}
+
 	return fmt.Sprintf(
 		"CW %02d.%d  %04d/%02d/%02d %02d:%02d",
 		week,
@@ -321,20 +402,20 @@ func Format(value time.Time) string {
 	)
 }
 
-func previousField(field Field) Field {
-	if field == FieldCalendarWeek {
-		return FieldMinute
+func (m Model) previousField() Field {
+	if m.field == FieldCalendarWeek {
+		return maxField(m.dateOnly)
 	}
 
-	return field - 1
+	return m.field - 1
 }
 
-func nextField(field Field) Field {
-	if field == FieldMinute {
+func (m Model) nextField() Field {
+	if m.field >= maxField(m.dateOnly) {
 		return FieldCalendarWeek
 	}
 
-	return field + 1
+	return m.field + 1
 }
 
 func fieldLength(field Field) int {
@@ -356,6 +437,30 @@ func fieldLength(field Field) int {
 	}
 
 	return fieldMinuteLength
+}
+
+func maxField(dateOnly bool) Field {
+	if dateOnly {
+		return FieldDay
+	}
+
+	return FieldMinute
+}
+
+func nextScheduleKeySet(keys []string) map[string]struct{} {
+	if len(keys) == 0 {
+		keys = []string{"n"}
+	}
+
+	keySet := make(map[string]struct{}, len(keys))
+	for _, key := range keys {
+		if key == "" {
+			continue
+		}
+		keySet[key] = struct{}{}
+	}
+
+	return keySet
 }
 
 func isoWeekday(value time.Time) int {
@@ -444,6 +549,23 @@ func daysInMonth(year int, month time.Month) int {
 
 func truncateToMinute(value time.Time) time.Time {
 	return value.Truncate(time.Minute)
+}
+
+func normalizeTimeByMode(value time.Time, dateOnly bool) time.Time {
+	if dateOnly {
+		return time.Date(
+			value.Year(),
+			value.Month(),
+			value.Day(),
+			0,
+			0,
+			0,
+			0,
+			value.Location(),
+		)
+	}
+
+	return truncateToMinute(value)
 }
 
 func clamp(value int, minimum int, maximum int) int {
