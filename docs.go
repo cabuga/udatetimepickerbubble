@@ -8,7 +8,7 @@ It supports full datetime selection and pure date selection.
 ## Import
 
 ` + "```go" + `
-import datetimepicker "github.com/carlos/udatetimepickerbubble"
+import datetimepicker "github.com/cabuga/udatetimepickerbubble"
 ` + "```" + `
 
 ## Picker Format

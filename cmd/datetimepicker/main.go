@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	datetimepicker "github.com/carlos/udatetimepickerbubble"
+	datetimepicker "github.com/cabuga/udatetimepickerbubble"
 )
 
 const defaultTimeLayout = "2006-01-02 15:04"

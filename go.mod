@@ -1,4 +1,4 @@
-module github.com/carlos/udatetimepickerbubble
+module github.com/cabuga/udatetimepickerbubble
 
 go 1.26.0
 
