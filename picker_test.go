@@ -249,6 +249,25 @@ func TestViewWidthLimitsRenderedLines(t *testing.T) {
 	}
 }
 
+func TestViewWrapsCompleteTutorialText(t *testing.T) {
+	model := New(Config{
+		InitialTime:  time.Date(2026, time.August, 20, 22, 21, 0, 0, time.UTC),
+		ShowTutorial: true,
+		Width:        66,
+		WrapTutorial: true,
+	})
+
+	view := model.View().Content
+	if !strings.Contains(view, "q/esc to cancel.") {
+		t.Fatalf("view does not contain end of wrapped tutorial: %q", view)
+	}
+	for lineNumber, line := range strings.Split(view, "\n") {
+		if width := ansi.StringWidth(line); width > 66 {
+			t.Fatalf("line %d width = %d, want <= 66: %q", lineNumber+1, width, line)
+		}
+	}
+}
+
 func TestViewUsesCompactTutorial(t *testing.T) {
 	model := New(Config{
 		InitialTime:     time.Date(2026, time.August, 20, 22, 21, 0, 0, time.UTC),
@@ -281,6 +300,24 @@ func TestViewUsesCustomTutorialText(t *testing.T) {
 	}
 	if strings.Contains(view, defaultTutorialText) {
 		t.Fatalf("view contains default tutorial when custom tutorial was set: %q", view)
+	}
+}
+
+func TestViewClipsTutorialTextToWidthWithoutWrapping(t *testing.T) {
+	model := New(Config{
+		InitialTime:  time.Date(2026, time.August, 20, 22, 21, 0, 0, time.UTC),
+		ShowTutorial: true,
+		Width:        66,
+	})
+
+	view := model.View().Content
+	if strings.Contains(view, "q/esc to cancel.") {
+		t.Fatalf("view contains end of tutorial without wrapping enabled: %q", view)
+	}
+	for lineNumber, line := range strings.Split(view, "\n") {
+		if width := ansi.StringWidth(line); width > 66 {
+			t.Fatalf("line %d width = %d, want <= 66: %q", lineNumber+1, width, line)
+		}
 	}
 }
 

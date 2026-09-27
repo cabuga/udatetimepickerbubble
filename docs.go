@@ -90,10 +90,13 @@ Bubble Tea layout:
 - ` + "`Width`" + `: optional render width in terminal cells. If unset or <= 0,
   rendering remains backward compatible.
 - ` + "`TutorialText`" + `: optional custom help text used when ` + "`ShowTutorial`" + ` is true.
+- ` + "`WrapTutorial`" + `: wrap the complete tutorial/help text to ` + "`Width`" + `.
 - ` + "`CompactTutorial`" + `: use a shorter built-in help line for narrow panels.
 
-When ` + "`Width`" + ` is set, the title and tutorial wrap to that width and the picker
-value is kept within it.
+When ` + "`Width`" + ` is set, the title wraps to that width and the picker value is
+kept within it. Tutorial/help text is constrained to ` + "`Width`" + `; use
+` + "`WrapTutorial`" + ` to preserve the complete help text across wrapped lines or
+` + "`CompactTutorial`" + ` for a shorter narrow-layout help line.
 
 ## Date-Only Use
 
@@ -215,6 +218,20 @@ picker := datetimepicker.New(datetimepicker.Config{
 	CompactTutorial:  true,
 	Width:            66,
 	Title:            "Edit start datetime",
+})
+` + "```" + `
+
+To keep the complete help text instead of using the compact form:
+
+` + "```go" + `
+picker := datetimepicker.New(datetimepicker.Config{
+	InitialTime:  initial,
+	InitialField: datetimepicker.FieldCalendarWeek,
+	Schedules:    schedules,
+	ShowTutorial: true,
+	WrapTutorial: true,
+	Width:        66,
+	Title:        "Edit start datetime",
 })
 ` + "```" + `
 

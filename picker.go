@@ -56,6 +56,7 @@ type Config struct {
 	Title            string
 	Width            int
 	TutorialText     string
+	WrapTutorial     bool
 	CompactTutorial  bool
 	Now              func() time.Time
 }
@@ -78,6 +79,7 @@ type Model struct {
 	title        string
 	width        int
 	tutorialText string
+	wrapHelp     bool
 	compactHelp  bool
 	now          func() time.Time
 	result       Result
@@ -112,6 +114,7 @@ func New(config Config) Model {
 		title:        config.Title,
 		width:        config.Width,
 		tutorialText: config.TutorialText,
+		wrapHelp:     config.WrapTutorial,
 		compactHelp:  config.CompactTutorial,
 		now:          now,
 	}
@@ -184,7 +187,7 @@ func (m Model) View() tea.View {
 		builder.WriteByte('\n')
 	}
 	if m.showTutorial {
-		builder.WriteString(renderConstrainedText(m.helpText(), m.width))
+		builder.WriteString(m.renderHelp())
 		builder.WriteString("\n\n")
 	}
 
@@ -251,6 +254,18 @@ func (m Model) helpText() string {
 	}
 
 	return defaultTutorialText
+}
+
+func (m Model) renderHelp() string {
+	text := m.helpText()
+	if m.width <= 0 {
+		return text
+	}
+	if m.compactHelp || m.wrapHelp {
+		return renderConstrainedText(text, m.width)
+	}
+
+	return constrainWrappedLines(text, m.width)
 }
 
 func (m Model) renderPicker(width int) string {
