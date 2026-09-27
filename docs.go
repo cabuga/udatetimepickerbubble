@@ -82,6 +82,19 @@ func main() {
 }
 ` + "```" + `
 
+## Layout Options
+
+The picker can constrain its rendered content when embedded inside another
+Bubble Tea layout:
+
+- ` + "`Width`" + `: optional render width in terminal cells. If unset or <= 0,
+  rendering remains backward compatible.
+- ` + "`TutorialText`" + `: optional custom help text used when ` + "`ShowTutorial`" + ` is true.
+- ` + "`CompactTutorial`" + `: use a shorter built-in help line for narrow panels.
+
+When ` + "`Width`" + ` is set, the title and tutorial wrap to that width and the picker
+value is kept within it.
+
 ## Date-Only Use
 
 ` + "```go" + `
@@ -188,6 +201,21 @@ The example CLI accepts repeated cron and daily schedules:
 picker := datetimepicker.New(datetimepicker.Config{InitialTime: time.Now()})
 model, cmd := picker.Update(msg)
 picker = model.(datetimepicker.Model)
+` + "```" + `
+
+For a bordered panel in an 80-column app, leave room for the border and parent
+padding:
+
+` + "```go" + `
+picker := datetimepicker.New(datetimepicker.Config{
+	InitialTime:      initial,
+	InitialField:     datetimepicker.FieldCalendarWeek,
+	Schedules:        schedules,
+	ShowTutorial:     true,
+	CompactTutorial:  true,
+	Width:            66,
+	Title:            "Edit start datetime",
+})
 ` + "```" + `
 
 ## go.work Use

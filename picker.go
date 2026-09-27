@@ -6,6 +6,7 @@ import (
 	"time"
 
 	tea "charm.land/bubbletea/v2"
+	"github.com/charmbracelet/x/ansi"
 )
 
 const (
@@ -18,8 +19,11 @@ const (
 	fieldMinuteLength       = 2
 )
 
-const tutorialText = "Use left/right to select, up/down or digits to edit, " +
-	"n for next schedule, t for now, enter to confirm, q/esc to cancel.\n\n"
+const defaultTutorialText = "Use left/right to select, up/down or digits to edit, " +
+	"n for next schedule, t for now, enter to confirm, q/esc to cancel."
+
+const compactTutorialText = "left/right field | up/down edit | digits | n | " +
+	"t now | enter | esc"
 
 type Field int
 
@@ -50,6 +54,9 @@ type Config struct {
 	NextScheduleKeys []string
 	ShowTutorial     bool
 	Title            string
+	Width            int
+	TutorialText     string
+	CompactTutorial  bool
 	Now              func() time.Time
 }
 
@@ -69,6 +76,9 @@ type Model struct {
 	tempInput    string
 	showTutorial bool
 	title        string
+	width        int
+	tutorialText string
+	compactHelp  bool
 	now          func() time.Time
 	result       Result
 	done         bool
@@ -100,6 +110,9 @@ func New(config Config) Model {
 		nextKeys:     nextScheduleKeySet(config.NextScheduleKeys),
 		showTutorial: config.ShowTutorial,
 		title:        config.Title,
+		width:        config.Width,
+		tutorialText: config.TutorialText,
+		compactHelp:  config.CompactTutorial,
 		now:          now,
 	}
 }
@@ -167,17 +180,27 @@ func (m Model) View() tea.View {
 	var builder strings.Builder
 
 	if m.title != "" {
-		builder.WriteString(m.title)
+		builder.WriteString(renderConstrainedText(m.title, m.width))
 		builder.WriteByte('\n')
 	}
 	if m.showTutorial {
-		builder.WriteString(tutorialText)
+		builder.WriteString(renderConstrainedText(m.helpText(), m.width))
+		builder.WriteString("\n\n")
 	}
 
-	builder.WriteString(m.renderPicker())
+	builder.WriteString(m.renderPicker(m.width))
 	if m.tempInput != "" {
 		builder.WriteString("  ")
 		builder.WriteString(m.tempInput)
+	}
+	if m.width > 0 {
+		pickerLine := lastLine(builder.String())
+		if ansi.StringWidth(pickerLine) > m.width {
+			contents := builder.String()
+			builder.Reset()
+			builder.WriteString(strings.TrimSuffix(contents, pickerLine))
+			builder.WriteString(ansi.Truncate(pickerLine, m.width, ""))
+		}
 	}
 	builder.WriteByte('\n')
 
@@ -219,7 +242,18 @@ func unexpectedModelError(model tea.Model) error {
 	return fmt.Errorf("unexpected final model type %T", model)
 }
 
-func (m Model) renderPicker() string {
+func (m Model) helpText() string {
+	if m.tutorialText != "" {
+		return m.tutorialText
+	}
+	if m.compactHelp {
+		return compactTutorialText
+	}
+
+	return defaultTutorialText
+}
+
+func (m Model) renderPicker(width int) string {
 	_, week := m.current.ISOWeek()
 	isoDay := isoWeekday(m.current)
 	values := []string{
@@ -242,7 +276,7 @@ func (m Model) renderPicker() string {
 	}
 
 	if m.dateOnly {
-		return fmt.Sprintf(
+		full := fmt.Sprintf(
 			"CW %s.%s  %s/%s/%s",
 			values[FieldCalendarWeek],
 			values[FieldISOWeekday],
@@ -250,9 +284,20 @@ func (m Model) renderPicker() string {
 			values[FieldMonth],
 			values[FieldDay],
 		)
+		if width <= 0 || ansi.StringWidth(full) <= width {
+			return full
+		}
+
+		compact := fmt.Sprintf(
+			"%s/%s/%s",
+			values[FieldYear],
+			values[FieldMonth],
+			values[FieldDay],
+		)
+		return truncateToWidth(compact, width)
 	}
 
-	return fmt.Sprintf(
+	full := fmt.Sprintf(
 		"CW %s.%s  %s/%s/%s %s:%s",
 		values[FieldCalendarWeek],
 		values[FieldISOWeekday],
@@ -262,6 +307,53 @@ func (m Model) renderPicker() string {
 		values[FieldHour],
 		values[FieldMinute],
 	)
+	if width <= 0 || ansi.StringWidth(full) <= width {
+		return full
+	}
+
+	compact := fmt.Sprintf(
+		"%s/%s/%s %s:%s",
+		values[FieldYear],
+		values[FieldMonth],
+		values[FieldDay],
+		values[FieldHour],
+		values[FieldMinute],
+	)
+	return truncateToWidth(compact, width)
+}
+
+func renderConstrainedText(text string, width int) string {
+	if width <= 0 {
+		return text
+	}
+
+	return constrainWrappedLines(ansi.Wrap(text, width, ""), width)
+}
+
+func constrainWrappedLines(text string, width int) string {
+	lines := strings.Split(text, "\n")
+	for index, line := range lines {
+		lines[index] = truncateToWidth(line, width)
+	}
+
+	return strings.Join(lines, "\n")
+}
+
+func truncateToWidth(text string, width int) string {
+	if width <= 0 || ansi.StringWidth(text) <= width {
+		return text
+	}
+
+	return ansi.Truncate(text, width, "")
+}
+
+func lastLine(text string) string {
+	index := strings.LastIndexByte(text, '\n')
+	if index == -1 {
+		return text
+	}
+
+	return text[index+1:]
 }
 
 func (m *Model) applyTemp() {

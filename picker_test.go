@@ -1,10 +1,12 @@
 package datetimepicker
 
 import (
+	"strings"
 	"testing"
 	"time"
 
 	tea "charm.land/bubbletea/v2"
+	"github.com/charmbracelet/x/ansi"
 )
 
 func TestFormatInitialExample(t *testing.T) {
@@ -220,6 +222,83 @@ func TestNextScheduleUsesNearestCronSchedule(t *testing.T) {
 	want := "CW 34.4  2026/08/20 05:07"
 	if got != want {
 		t.Fatalf("nearest cron = %q, want %q", got, want)
+	}
+}
+
+func TestViewWidthLimitsRenderedLines(t *testing.T) {
+	model := New(Config{
+		InitialTime: time.Date(
+			2026,
+			time.August,
+			20,
+			22,
+			21,
+			0,
+			0,
+			time.UTC,
+		),
+		ShowTutorial: true,
+		Title:        "Edit start datetime with a title that needs wrapping",
+		Width:        66,
+	})
+
+	for lineNumber, line := range strings.Split(model.View().Content, "\n") {
+		if width := ansi.StringWidth(line); width > 66 {
+			t.Fatalf("line %d width = %d, want <= 66: %q", lineNumber+1, width, line)
+		}
+	}
+}
+
+func TestViewUsesCompactTutorial(t *testing.T) {
+	model := New(Config{
+		InitialTime:     time.Date(2026, time.August, 20, 22, 21, 0, 0, time.UTC),
+		ShowTutorial:    true,
+		CompactTutorial: true,
+		Width:           66,
+	})
+
+	view := model.View().Content
+	if !strings.Contains(view, compactTutorialText) {
+		t.Fatalf("view does not contain compact tutorial %q: %q", compactTutorialText, view)
+	}
+	if strings.Contains(view, defaultTutorialText) {
+		t.Fatalf("view contains default tutorial when compact tutorial was requested: %q", view)
+	}
+}
+
+func TestViewUsesCustomTutorialText(t *testing.T) {
+	customTutorial := "left/right field | up/down adjust | enter save"
+	model := New(Config{
+		InitialTime:  time.Date(2026, time.August, 20, 22, 21, 0, 0, time.UTC),
+		ShowTutorial: true,
+		TutorialText: customTutorial,
+		Width:        66,
+	})
+
+	view := model.View().Content
+	if !strings.Contains(view, customTutorial) {
+		t.Fatalf("view does not contain custom tutorial %q: %q", customTutorial, view)
+	}
+	if strings.Contains(view, defaultTutorialText) {
+		t.Fatalf("view contains default tutorial when custom tutorial was set: %q", view)
+	}
+}
+
+func TestViewWithoutWidthKeepsTutorialCompatible(t *testing.T) {
+	model := New(Config{
+		InitialTime:  time.Date(2026, time.August, 20, 22, 21, 0, 0, time.UTC),
+		ShowTutorial: true,
+		Title:        "Select datetime",
+	})
+
+	got := model.View().Content
+	want := "Select datetime\n" +
+		defaultTutorialText +
+		"\n\n" +
+		"CW \x1b[7m34\x1b[0m.4  2026/08/20 22:21\n"
+
+	if got != want {
+		t.Fatalf("View() = %q, want %q", got, want)
 	}
 }
 
