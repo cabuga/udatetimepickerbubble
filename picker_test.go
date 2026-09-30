@@ -198,6 +198,45 @@ func TestCronScheduleNextMonday(t *testing.T) {
 	}
 }
 
+func TestOffsetSchedule(t *testing.T) {
+	after := time.Date(2026, time.August, 20, 10, 30, 15, 0, time.UTC)
+	for _, expression := range []string{"offset:+72h", "offset:72h"} {
+		schedule, err := NewOffsetSchedule(expression)
+		if err != nil {
+			t.Fatalf("NewOffsetSchedule(%q) error = %v", expression, err)
+		}
+		if got, want := schedule.Next(after), after.Add(72*time.Hour); !got.Equal(want) {
+			t.Errorf("Next(%q) = %q, want %q", expression, got, want)
+		}
+	}
+}
+
+func TestNewOffsetScheduleRejectsInvalidExpressions(t *testing.T) {
+	for _, expression := range []string{"", "offset:", "offset:0s", "offset:-1h", "offset:bogus", "72h"} {
+		if _, err := NewOffsetSchedule(expression); err == nil {
+			t.Errorf("NewOffsetSchedule(%q) error = nil, want error", expression)
+		}
+	}
+}
+
+func TestNewScheduleDispatchesOffsetAndCron(t *testing.T) {
+	after := time.Date(2026, time.August, 20, 10, 30, 15, 0, time.UTC)
+	offset, err := NewSchedule("offset:72h")
+	if err != nil {
+		t.Fatalf("NewSchedule(offset) error = %v", err)
+	}
+	if got, want := offset.Next(after), after.Add(72*time.Hour); !got.Equal(want) {
+		t.Fatalf("offset Next() = %q, want %q", got, want)
+	}
+	cron, err := NewSchedule("5 4 * * 1")
+	if err != nil {
+		t.Fatalf("NewSchedule(cron) error = %v", err)
+	}
+	if got, want := cron.Next(after), time.Date(2026, time.August, 24, 4, 5, 0, 0, time.UTC); !got.Equal(want) {
+		t.Fatalf("cron Next() = %q, want %q", got, want)
+	}
+}
+
 func TestNextScheduleUsesNearestCronSchedule(t *testing.T) {
 	monday, mondayErr := NewCronSchedule("5 4 * * 1")
 	if mondayErr != nil {

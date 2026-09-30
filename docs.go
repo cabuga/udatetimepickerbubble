@@ -157,6 +157,17 @@ picker := datetimepicker.New(datetimepicker.Config{
 If the picker points to Wednesday, pressing ` + "`n`" + ` selects Thursday at
 05:07 because it is nearer than the following Monday at 04:05.
 
+Offset schedules select a fixed duration after the current picker value. Use
+` + "`offset:+72h`" + ` or ` + "`offset:72h`" + ` for a time 72 hours later. The generic parser
+` + "`NewSchedule`" + ` accepts either offsets or cron expressions:
+
+` + "```go" + `
+schedule, err := datetimepicker.NewSchedule("offset:72h")
+if err != nil {
+	panic(err)
+}
+` + "```" + `
+
 For a simple daily task at 21:00:
 
 ` + "```go" + `
