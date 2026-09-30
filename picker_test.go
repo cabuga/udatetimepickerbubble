@@ -231,19 +231,23 @@ func TestNewOffsetScheduleRejectsInvalidExpressions(t *testing.T) {
 }
 
 func TestNewScheduleDispatchesOffsetAndCron(t *testing.T) {
-	after := time.Date(2026, time.August, 20, 10, 30, 15, 0, time.UTC)
-	offset, err := NewSchedule("offset:72h")
+	location := time.FixedZone("test", 3*60*60)
+	after := time.Date(2026, time.August, 20, 10, 30, 15, 0, location)
+	offset, err := NewSchedule("  offset:72h  ")
 	if err != nil {
 		t.Fatalf("NewSchedule(offset) error = %v", err)
 	}
 	if got, want := offset.Next(after), after.Add(72*time.Hour); !got.Equal(want) {
 		t.Fatalf("offset Next() = %q, want %q", got, want)
 	}
-	cron, err := NewSchedule("5 4 * * 1")
+	if got := offset.Next(after).Location(); got != location {
+		t.Fatalf("offset location = %v, want input location %v", got, location)
+	}
+	cron, err := NewSchedule("  5 4 * * 1  ")
 	if err != nil {
 		t.Fatalf("NewSchedule(cron) error = %v", err)
 	}
-	if got, want := cron.Next(after), time.Date(2026, time.August, 24, 4, 5, 0, 0, time.UTC); !got.Equal(want) {
+	if got, want := cron.Next(after), time.Date(2026, time.August, 24, 4, 5, 0, 0, location); !got.Equal(want) {
 		t.Fatalf("cron Next() = %q, want %q", got, want)
 	}
 }

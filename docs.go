@@ -157,11 +157,11 @@ picker := datetimepicker.New(datetimepicker.Config{
 If the picker points to Wednesday, pressing ` + "`n`" + ` selects Thursday at
 05:07 because it is nearer than the following Monday at 04:05.
 
-Offset schedules select a fixed duration after the current picker value. They
-accept Go duration units plus ` + "`d`" + ` for days and ` + "`w`" + ` for weeks, including combined
+Offset schedules return the supplied ` + "`after`" + ` time plus a fixed duration.
+They accept Go duration units plus ` + "`d`" + ` for days and ` + "`w`" + ` for weeks, including combined
 values such as ` + "`offset:3d2h`" + `. For example, ` + "`offset:+72h`" + `, ` + "`offset:3d`" + `, and
-` + "`offset:2w`" + ` are valid. The generic parser ` + "`NewSchedule`" + ` accepts either offsets or cron
-expressions:
+` + "`offset:2w`" + ` are valid. The generic parser ` + "`NewSchedule`" + ` trims surrounding whitespace
+and accepts either offsets or cron expressions:
 
 ` + "```go" + `
 schedule, err := datetimepicker.NewSchedule("offset:72h")

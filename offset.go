@@ -91,6 +91,7 @@ func parseOffsetDuration(raw string) (time.Duration, error) {
 // NewSchedule parses an offset expression, or a cron expression when no
 // offset: prefix is present.
 func NewSchedule(expression string) (Schedule, error) {
+	expression = strings.TrimSpace(expression)
 	if strings.HasPrefix(expression, offsetPrefix) {
 		return NewOffsetSchedule(expression)
 	}
