@@ -200,19 +200,30 @@ func TestCronScheduleNextMonday(t *testing.T) {
 
 func TestOffsetSchedule(t *testing.T) {
 	after := time.Date(2026, time.August, 20, 10, 30, 15, 0, time.UTC)
-	for _, expression := range []string{"offset:+72h", "offset:72h"} {
-		schedule, err := NewOffsetSchedule(expression)
+	for _, test := range []struct {
+		expression string
+		duration   time.Duration
+	}{
+		{expression: "offset:+72h", duration: 72 * time.Hour},
+		{expression: "offset:72h", duration: 72 * time.Hour},
+		{expression: "offset:72m", duration: 72 * time.Minute},
+		{expression: "offset:2h", duration: 2 * time.Hour},
+		{expression: "offset:3d", duration: 72 * time.Hour},
+		{expression: "offset:3d2h", duration: 74 * time.Hour},
+		{expression: "offset:2w", duration: 14 * 24 * time.Hour},
+	} {
+		schedule, err := NewOffsetSchedule(test.expression)
 		if err != nil {
-			t.Fatalf("NewOffsetSchedule(%q) error = %v", expression, err)
+			t.Fatalf("NewOffsetSchedule(%q) error = %v", test.expression, err)
 		}
-		if got, want := schedule.Next(after), after.Add(72*time.Hour); !got.Equal(want) {
-			t.Errorf("Next(%q) = %q, want %q", expression, got, want)
+		if got, want := schedule.Next(after), after.Add(test.duration); !got.Equal(want) {
+			t.Errorf("Next(%q) = %q, want %q", test.expression, got, want)
 		}
 	}
 }
 
 func TestNewOffsetScheduleRejectsInvalidExpressions(t *testing.T) {
-	for _, expression := range []string{"", "offset:", "offset:0s", "offset:-1h", "offset:bogus", "72h"} {
+	for _, expression := range []string{"", "offset:", "offset:0s", "offset:-1h", "offset:bogus", "offset:3x", "72h"} {
 		if _, err := NewOffsetSchedule(expression); err == nil {
 			t.Errorf("NewOffsetSchedule(%q) error = nil, want error", expression)
 		}
