@@ -10,6 +10,8 @@ import (
 )
 
 const offsetPrefix = "offset:"
+const shortOffsetPrefix = "o:"
+const cronPrefix = "c:"
 
 var offsetPartPattern = regexp.MustCompile(`([0-9]+(?:\.[0-9]+)?)(ns|us|µs|μs|ms|s|m|h|d|w)`)
 
@@ -88,10 +90,16 @@ func parseOffsetDuration(raw string) (time.Duration, error) {
 	return duration, nil
 }
 
-// NewSchedule parses an offset expression, or a cron expression when no
-// offset: prefix is present.
+// NewSchedule parses a cron or offset expression. Cron expressions can use
+// the c: prefix or be bare; offset expressions can use o: or offset:.
 func NewSchedule(expression string) (Schedule, error) {
 	expression = strings.TrimSpace(expression)
+	if strings.HasPrefix(expression, cronPrefix) {
+		return NewCronSchedule(strings.TrimPrefix(expression, cronPrefix))
+	}
+	if strings.HasPrefix(expression, shortOffsetPrefix) {
+		return NewOffsetSchedule(offsetPrefix + strings.TrimPrefix(expression, shortOffsetPrefix))
+	}
 	if strings.HasPrefix(expression, offsetPrefix) {
 		return NewOffsetSchedule(expression)
 	}

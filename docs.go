@@ -159,12 +159,13 @@ If the picker points to Wednesday, pressing ` + "`n`" + ` selects Thursday at
 
 Offset schedules return the supplied ` + "`after`" + ` time plus a fixed duration.
 They accept Go duration units plus ` + "`d`" + ` for days and ` + "`w`" + ` for weeks, including combined
-values such as ` + "`offset:3d2h`" + `. For example, ` + "`offset:+72h`" + `, ` + "`offset:3d`" + `, and
-` + "`offset:2w`" + ` are valid. The generic parser ` + "`NewSchedule`" + ` trims surrounding whitespace
-and accepts either offsets or cron expressions:
+values such as ` + "`o:3d2h`" + `. For example, ` + "`o:+72h`" + `, ` + "`o:3d`" + `, and ` + "`o:2w`" + ` are
+valid. The generic parser ` + "`NewSchedule`" + ` accepts ` + "`c:`" + ` for cron and ` + "`o:`" + ` for offsets,
+trims surrounding whitespace, and continues to accept bare cron expressions and the
+` + "`offset:`" + ` offset prefix:
 
 ` + "```go" + `
-schedule, err := datetimepicker.NewSchedule("offset:72h")
+schedule, err := datetimepicker.NewSchedule("o:72h")
 if err != nil {
 	panic(err)
 }

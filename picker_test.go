@@ -243,12 +243,34 @@ func TestNewScheduleDispatchesOffsetAndCron(t *testing.T) {
 	if got := offset.Next(after).Location(); got != location {
 		t.Fatalf("offset location = %v, want input location %v", got, location)
 	}
+	shortOffset, err := NewSchedule("  o:72h  ")
+	if err != nil {
+		t.Fatalf("NewSchedule(short offset) error = %v", err)
+	}
+	if got, want := shortOffset.Next(after), after.Add(72*time.Hour); !got.Equal(want) {
+		t.Fatalf("short offset Next() = %q, want %q", got, want)
+	}
 	cron, err := NewSchedule("  5 4 * * 1  ")
 	if err != nil {
 		t.Fatalf("NewSchedule(cron) error = %v", err)
 	}
 	if got, want := cron.Next(after), time.Date(2026, time.August, 24, 4, 5, 0, 0, location); !got.Equal(want) {
 		t.Fatalf("cron Next() = %q, want %q", got, want)
+	}
+	shortCron, err := NewSchedule("  c:5 4 * * 1  ")
+	if err != nil {
+		t.Fatalf("NewSchedule(short cron) error = %v", err)
+	}
+	if got, want := shortCron.Next(after), time.Date(2026, time.August, 24, 4, 5, 0, 0, location); !got.Equal(want) {
+		t.Fatalf("short cron Next() = %q, want %q", got, want)
+	}
+}
+
+func TestNewScheduleRejectsInvalidPrefixedExpressions(t *testing.T) {
+	for _, expression := range []string{"c:", "o:", "c:invalid", "o:invalid"} {
+		if _, err := NewSchedule(expression); err == nil {
+			t.Errorf("NewSchedule(%q) error = nil, want error", expression)
+		}
 	}
 }
 
